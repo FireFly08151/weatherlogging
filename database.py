@@ -46,7 +46,7 @@ class Database:
         )
         self.cursor = self.mydb.cursor()
 
-    def add_coords(self, id: int, lat: float, lon: float) -> None:
+    def add_coords(self, id: int, lat: float, lon: float, print_debug = False) -> None:
         """Adds a new entry to the coords-table
 
         Expected types are hinted, the coordinate format is decimal degrees (Berlin would be 52.5200, 13.4050)
@@ -56,11 +56,11 @@ class Database:
                 VALUES (%s, %s, %s);
                 """
         values = (id, lat, lon)
-        print(query, values)
+        if print_debug: print(query, values)
         self.cursor.execute(query, values)
         self.mydb.commit()
 
-    def add_data(self, id: int, time: datetime, temp: float, humidity: int, clouds: int, rain: float, wind: float, wind_dir: int, gusts: float) -> None:
+    def add_data(self, id: int, time: datetime, temp: float, humidity: int, clouds: int, rain: float, wind: float, wind_dir: int, gusts: float, print_debug = False) -> None:
         """Adds a new entry to the data-table
 
         Expected types are hinted, additionally 'nan' gets converted to 'NULL' for the database.
@@ -88,10 +88,11 @@ class Database:
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
         values = (id, time, temp, humidity, clouds, rain, wind, wind_dir, gusts)
+        if print_debug: print(query, values)
         self.cursor.execute(query, values)
         self.mydb.commit()
 
-    def add_data_from_df(self, df: pd.DataFrame) -> None:
+    def add_data_from_df(self, df: pd.DataFrame, print_debug = False) -> None:
         """Adds the contents of the dataframe to the database
 
         :param df: pandas.DataFrame with columns 'id', 'time', 'temp', 'humidity', 'clouds', 'rain', 'wind', 'wind_dir', 'gusts'
@@ -117,10 +118,11 @@ class Database:
                 _to_null(row['gusts']),
             )
             values.append(cleaned)
+        if print_debug: print(query, values)
         self.cursor.executemany(query, values)
         self.mydb.commit()
 
-    def get_coords(self) -> pd.DataFrame:
+    def get_coords(self, print_debug = False) -> pd.DataFrame:
         """Reads the coord ids from the database
 
         :return: pandas.DataFrame with columns 'id', 'lat', 'lon'
@@ -131,28 +133,32 @@ class Database:
                 """
         self.cursor.execute(query)
         df = pd.DataFrame(self.cursor.fetchall(), columns=['id', 'lat', 'lon'])
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
-    def get_coords_from_id(self, id: int) -> pd.DataFrame:
+    def get_coords_from_id(self, id: int, print_debug = False) -> pd.DataFrame:
         """Reads the coords for a specific id from the database
 
         :param id:
         :return: pandas.DataFrame with columns 'id', 'lat', 'lon' containing one row
         """
-        print(f'Getting coords for {id}...')
+        print(f'Getting coords for id {id}...')
         query = """
                 SELECT * FROM coords WHERE id = %s
                 """
         values = (id,)
         self.cursor.execute(query, values)
         df = pd.DataFrame(self.cursor.fetchall(), columns=['id', 'lat', 'lon'])
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
-    def get_data(self) -> pd.DataFrame:
+    def get_data(self, print_debug = False) -> pd.DataFrame:
         """Reads the data from the database
 
         :return: pandas.DataFrame with columns 'id', 'time', 'temp', 'humidity', 'clouds', 'rain', 'wind', 'wind_dir', 'gusts'
@@ -164,27 +170,24 @@ class Database:
         self.cursor.execute(query)
         df = _convert_data_to_df(self.cursor.fetchall())
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
-    def get_data_from_id(self, id: int) -> pd.DataFrame:
+    def get_data_from_id(self, id: int, print_debug = False) -> pd.DataFrame:
         """Reads the data for a specific id from the database
 
         :param id:
         :return: pandas.DataFrame with columns 'id', 'time', 'temp', 'humidity', 'clouds', 'rain', 'wind', 'wind_dir', 'gusts'
         """
-        print(f'Getting data from {id}...')
-        query = """
-                SELECT * FROM data WHERE id = %s
-                """
-        values = (id,)
-        self.cursor.execute(query, values)
+        print(f'Getting data for id {id}...')
+        query = f'SELECT * FROM data WHERE id = {id}'
+        self.cursor.execute(query)
         df = _convert_data_to_df(self.cursor.fetchall())
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
-    def get_data_from_datetime(self, time: datetime) -> pd.DataFrame:
+    def get_data_from_datetime(self, time: datetime, print_debug = False) -> pd.DataFrame:
         """Reads the data for a specific time from the database
 
         :param time: Specific time you want the data from
@@ -198,10 +201,10 @@ class Database:
         self.cursor.execute(query, values)
         df = _convert_data_to_df(self.cursor.fetchall())
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
-    def get_data_between_datetimes(self, start: datetime, end: datetime) -> pd.DataFrame:
+    def get_data_between_datetimes(self, start: datetime, end: datetime, print_debug = False) -> pd.DataFrame:
         """Reads the data for a specific time period from the database
 
         :param start: start of the timeframe
@@ -216,7 +219,7 @@ class Database:
         self.cursor.execute(query, values)
         df = _convert_data_to_df(self.cursor.fetchall())
         self.mydb.commit()
-        print(df)
+        if print_debug: print(df)
         return df
 
     def close(self) -> None:
