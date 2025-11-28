@@ -4,7 +4,7 @@ Project that uses [weatherapi.com](https://www.weatherapi.com/) to collect weath
 This project was designed to run on a Raspberry Pi so you have to change the paths for commands of you use it on another machine.
 
 ---
-## Requirements
+# Requirements
 ```shell
 sudo apt install mariadb-server
 
@@ -23,11 +23,26 @@ deactivate
 Execute scripts with `/home/pi/myenv/bin/python3` instead of `python3`
 
 Create a `.env`-file containing
-- `API_KEY` - Your personal API key from [weatherapi.com](https://www.weatherapi.com/))
-- `HOST` - `localhost` or the ip for the database server)
+- `API_KEY` - Your personal [API-Key](#API-Key)
+- `HOST` - `localhost` or the ip for the database server
 - `DB_USER` - username for database
 - `DB_PW` - password for database
 - `DB` - database name
+
+## API-Key
+
+The weather data is retrieved via an API call from [weatherapi.com](https://www.weatherapi.com). For this reason, an API-Key is required.
+
+Depending on the volume of your API calls, you may need to purchase a subscription for your required number of API calls.
+
+In my case, I don't need a subscription as I have under a million API calls per month.
+- ~1100 coordinates
+- 8 times per day ([Crontab](#Crontab))
+- ~31 days a month
+
+1100 * 8 * 31 = 272800 API-Calls/Month
+
+You can generate your own API key at [weatherapi.com](https://www.weatherapi.com/pricing.aspx).
 
 ## Creating the database
 ```sql
@@ -98,6 +113,9 @@ Make sure you have `grid.csv` filled with the coordinates you want to collect da
 
 Execute [fill_db_with_grid.py](./fill_db_with_grid.py) to add these coordinates to the database.
 
+# Execution
+## Manual Execution
+`/home/pi/myenv/bin/python3 /home/pi/weatherlogging/weatherlogging.py`
 ## Crontab
 Using crontab to set up automatic execution of the script and backups
 
@@ -106,13 +124,16 @@ Using crontab to set up automatic execution of the script and backups
 # Variables for weatherlogging
 DATE=date +%Y-%m-%d
 PW=123456
-
-# Schedules for weatherlogging and backup
-0 */3 * * * /home/pi/myenv/bin/python /home/pi/weatherlogging/weatherlogging.py
+```
+### Automatic execution every 3rd hour
+```
+0 */3 * * * /home/pi/myenv/bin/python3 /home/pi/weatherlogging/weatherlogging.py
+```
+### Backup every Sunday at 03:40am
+```
 40 3 * * */3 sudo mysqldump -u weatherlogging -p$PW --databases weatherlogging > /home/pi/weatherlogging/backup/$($DATE).sql
 ```
-## Additional copy of the backup to a USB-Stick for backup redundancy
-Crontab addition:
+### Additional copy of the backup to a USB-Stick for backup redundancy
 ```
 40 3 * * */3 sudo mysqldump -u weatherlogging -p$PW --databases weatherlogging > /home/pi/weatherlogging/backup/$($DATE).sql && sudo mount /dev/sdb1 /media/usb && sudo cp /home/pi/weatherlogging/backup/$($DATE).sql /media/usb/backup/ && sudo umount /dev/sdb1
 ```
@@ -128,7 +149,7 @@ sudo umount /dev/sdb1
 
 Execute [data_analysis.py](./data_analysis.py) for basic data analysis and plot creation.
 
-## MariaDB
+# MariaDB
 General commands related to MariaDB:
 ```sql
 show databases;
