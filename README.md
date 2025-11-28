@@ -16,11 +16,18 @@ source myenv/bin/activate
 pip install mysql-connector-python
 pip install pandas
 pip install requests
+pip install dotenv
+# There might be modules required for the analysis that are not listed here
 deactivate
 ```
 Execute scripts with `/home/pi/myenv/bin/python3` instead of `python3`
 
-Run [weatherlogging.py](weatherlogging.py) once to create `config.json` with defaults, then replace them with your credentials.
+Create a `.env`-file containing
+- `API_KEY` - Your personal API key from [weatherapi.com](https://www.weatherapi.com/))
+- `HOST` - `localhost` or the ip for the database server)
+- `DB_USER` - username for database
+- `DB_PW` - password for database
+- `DB` - database name
 
 ## Creating the database
 ```sql
@@ -84,6 +91,13 @@ use weatherlogging;
 create index data_time on data(time);
 ```
 
+## Adding coordinates to the database
+Make sure you have `grid.csv` filled with the coordinates you want to collect data on.
+
+[grid.csv](./grid.csv) contains coordinates forming a grid over germany with a resolution of 50km.
+
+Execute [fill_db_with_grid.py](./fill_db_with_grid.py) to add these coordinates to the database.
+
 ## Crontab
 Using crontab to set up automatic execution of the script and backups
 
@@ -109,6 +123,10 @@ fdisk -l
 sudo mount /dev/sdb1 /media/usb
 sudo umount /dev/sdb1
 ```
+
+## Data Analysis
+
+Execute [data_analysis.py](./data_analysis.py) for basic data analysis and plot creation.
 
 ## MariaDB
 General commands related to MariaDB:
