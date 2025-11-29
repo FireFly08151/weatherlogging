@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import contextily as ctx
@@ -7,6 +8,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
 from dotenv import load_dotenv
+from matplotlib.patches import Patch
 from shapely.geometry import LineString, Point
 
 from database import Database
@@ -152,7 +154,8 @@ def create_map(
 
 def create_graph(
     weatherdata: pd.DataFrame,
-    id_: int, source: str,
+    id_: int,
+    source: str,
     median_w: bool = False,
     median_m: bool = False,
     mean_w: bool = False,
@@ -163,12 +166,12 @@ def create_graph(
     Optionally also display weekly and/or monthly mean and/or average.
 
     :param weatherdata: pandas.DataFrame containing the weather data for a specific id.
+    :param id_: Database ID for reference
+    :param source: Table column of the dataframe (temp, humidity, clouds, rain, wind, wind_dir, gusts)
     :param median_w: Adds the weekly median to the graph
     :param median_m: Adds the monthly median to the graph
     :param mean_w: Adds the weekly mean to the graph
     :param mean_m: Adds the monthly mean to the graph
-    :param id_: Database ID for reference
-    :param source: Table column of the dataframe (temp, humidity, clouds, rain, wind, wind_dir, gusts)
     :return: A picture containing the graph
     """
     color_index = 0
@@ -249,6 +252,80 @@ def create_graph(
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+def create_bar_graph(weatherdata: pd.DataFrame, id_: int, source: str) -> None:
+    """Create a bar-graph visualizing the median data from the dataframe for a given column.
+
+    :param weatherdata: pandas.DataFrame containing the weather data for a specific id.
+    :param id_: Database ID for reference
+    :param source: Table column of the dataframe (temp, humidity, clouds, rain, wind, wind_dir, gusts)
+    :return:
+    """
+    match source:
+        case "temp":
+            title = f"Median Temperature per Month by Year (ID={id_})"
+            label = f"Median Temperature (°C)"
+        case "humidity":
+            title = f"Median Humidity per Month by Year (ID={id_})"
+            label = f"Median Humidity (%)"
+        case "clouds":
+            title = f"Median Cloud coverage per Month by Year (ID={id_})"
+            label = f"Median Cloud coverage (%)"
+        case "wind":
+            title = f"Median Wind Speed per Month by Year(ID={id_})"
+            label = f"Median Wind (km/h)"
+        case "wind_dir":
+            title = f"Median Wind Direction per Month by Year (ID={id_})"
+            label = f"Median Wind Direction (degrees)"
+        case "gusts":
+            title = f"Median Gust Speed per Month by Year (ID={id_})"
+            label = f"Median Gusts (km/h)"
+        case _:
+            print(f"Invalid source for graph: {source}")
+            return
+    print(f"Generating bar graph for {source}...")
+    df = weatherdata.copy()
+    df.index = pd.to_datetime(df.index)
+    df["year"] = df.index.year
+    df["month"] = df.index.month
+    df["month_name"] = df.index.month_name()
+
+    # Remove the first month from the dataset because it's not complete
+    first_timestamp = df.index.min()
+    first_year = first_timestamp.year
+    first_month = first_timestamp.month
+    df = df[~((df['year'] == first_year) & (df['month'] == first_month))]
+
+    # Remove the current month from the dataset because it's not complete
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    df = df[~((df['year'] == current_year) & (df['month'] == current_month))]
+
+    monthly_median = (df.groupby(["year", "month", "month_name"]).median(numeric_only=True).reset_index())
+
+    pivot = monthly_median.pivot(index="month_name", columns="year", values=source)
+
+    order = (monthly_median[["month", "month_name"]].drop_duplicates().sort_values("month")["month_name"])
+    pivot = pivot.reindex(order)
+
+    years = list(pivot.columns)
+    colors = plt.cm.tab10(range(len(years)))
+
+    ax = pivot.plot(kind="bar", figsize=(12,6), color=colors)
+
+    handles = ax.patches
+    unique_years = pivot.columns
+
+    legend_patches = [Patch(color=colors[i], label=str(unique_years[i])) for i in range(len(unique_years))]
+
+    plt.legend(handles=legend_patches, title="Year")
+
+    plt.xlabel("Month")
+    plt.ylabel(label)
+    plt.title(title)
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
     
 
 def main() -> None:
@@ -273,6 +350,7 @@ def main() -> None:
 
     create_map(coords, nearest_id=nearest_id, highlight_point=(lat, lon))
 
+    create_bar_graph(weatherdata, id_=nearest_id[0], source="temp")
     create_graph(weatherdata, id_=nearest_id[0], source="temp", mean_m=True)
     create_graph(weatherdata, id_=nearest_id[0], source="humidity", mean_m=True)
     create_graph(weatherdata, id_=nearest_id[0], source="clouds", mean_m=True)
