@@ -88,7 +88,7 @@ def create_map(
     :param nearest_id: tuple containing the database id, latitude and longitude of the nearest point in the grid.
     :param coords: pandas.DataFrame containing coordinates from the database.
     :param highlight_point: tuple containing latitude and longitude of the highlighted point in decimal degrees.
-    :return: 
+    :return: None
     """
     print("Generating Map...")
     # Convert DataFrame to GeoDataFrame with correct CRS
@@ -172,7 +172,7 @@ def create_graph(
     :param median_m: Adds the monthly median to the graph
     :param mean_w: Adds the weekly mean to the graph
     :param mean_m: Adds the monthly mean to the graph
-    :return: A picture containing the graph
+    :return: None
     """
     color_index = 0
     colors = ("red", "orange", "purple", "pink")
@@ -326,6 +326,37 @@ def create_bar_graph(weatherdata: pd.DataFrame, id_: int, source: str) -> None:
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.show()
+
+
+def create_missing_graph(
+        weatherdata: pd.DataFrame,
+        id_: int
+) -> None:
+    """Create a graph visualizing missing data points in the dataframe.
+
+    :param weatherdata: pandas.DataFrame containing the weather data for a specific id.
+    :param id_: Database ID for reference
+    :return: None
+    """
+    full_range = pd.date_range(weatherdata.index.min(), weatherdata.index.max(), freq="3H")
+    missing = full_range.difference(weatherdata.index)
+    missing_df = pd.DataFrame(index=missing)
+    missing_df["missing"] = 1
+
+    plt.figure(figsize=(12, 4))
+    plt.scatter(x=missing_df.index,
+                y=missing_df["missing"],
+                marker=".",
+                linestyle="None",
+                alpha=0.3,
+                color="red",
+                label=f"Missing: {missing_df.size}/{full_range.size} ({full_range.size/missing_df.size:.2f}%)")
+    plt.title(f"Missing Data Points (ID={id_})")
+    plt.yticks([])  # hide y-axis since the value is just a marker
+    plt.xlabel("Date")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
     
 
 def main() -> None:
@@ -358,6 +389,8 @@ def main() -> None:
     create_graph(weatherdata, id_=nearest_id[0], source="wind", mean_m=True)
     create_graph(weatherdata, id_=nearest_id[0], source="wind_dir", mean_m=True)
     create_graph(weatherdata, id_=nearest_id[0], source="gusts", mean_m=True)
+
+    create_missing_graph(weatherdata, id_=nearest_id[0])
 
     db.close()
 
