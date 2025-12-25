@@ -3,12 +3,14 @@ Project that uses [weatherapi.com](https://www.weatherapi.com/) to collect weath
 
 This project was designed to run on a Raspberry Pi so you have to change the paths for commands of you use it on another machine.
 
+[![WeatherAPI](https://cdn.weatherapi.com/v4/images/weatherapi_logo.png)](https://www.weatherapi.com/)
+
 ---
 # Requirements
 ```shell
 sudo apt install mariadb-server
 
-sudo mysql_secure_installation
+sudo sudo mariadb-secure-installation
 
 cd /home/pi
 python3 -m venv myenv
