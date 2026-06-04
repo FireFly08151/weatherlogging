@@ -1,7 +1,7 @@
 # weatherlogging
 Project that uses [weatherapi.com](https://www.weatherapi.com/) to collect weather data which gets written into a database for future analysis.
 
-This project was designed to run on a Raspberry Pi so you have to change the paths for commands of you use it on another machine.
+This project was designed to run on a Raspberry Pi so you have to change the paths for commands if you use it on another machine.
 
 [![WeatherAPI](https://cdn.weatherapi.com/v4/images/weatherapi_logo.png)](https://www.weatherapi.com/)
 
@@ -84,6 +84,9 @@ grant select on weatherlogging.* to 'remote'@'ip';
 
 flush privileges;
 ```
+
+You might need to edit your mariadb config in order be able to get remote access to the database.
+https://mariadb.com/docs/server/mariadb-quickstart-guides/mariadb-remote-connection-guide
 
 ## Importing the database from a backup
 <https://mariadb.com/kb/en/restoring-data-from-dump-files/>

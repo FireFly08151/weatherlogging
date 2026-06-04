@@ -280,6 +280,70 @@ class Database:
         if print_debug: print(df)
         return df
 
+    def get_data_count(self, print_debug: bool = False) -> int:
+        """Counts the number of data points in the database
+
+        :param print_debug: Print the result for debugging purposes
+        :return: The number of data points in the database
+        """
+        print(f"Getting data count...")
+        query = """
+                SELECT COUNT(*) FROM data
+                """
+        self.cursor.execute(query)
+        count = self.cursor.fetchone()[0]
+        if print_debug: print(count)
+        return int(count)
+
+    def get_data_count_from_datetime(self, time: datetime, print_debug: bool = False) -> int:
+        """Counts the number of data points in the database for a given time
+
+        :param time: Specific time you want the data from
+        :param print_debug: Print the result for debugging purposes
+        :return: The number of data points in the database for a given time
+        """
+        print(f"Getting data count from {time}...")
+        query = """
+                    SELECT COUNT(*) FROM data WHERE time = %s
+                """
+        values = (time,)
+        self.cursor.execute(query, values)
+        count = self.cursor.fetchone()[0]
+        if print_debug: print(count)
+        return int(count)
+
+    def get_data_count_between_datetimes(self, start: datetime, end: datetime, print_debug: bool = False) -> int:
+        """Counts the number of data points in the database for a specific time period
+
+        :param start: start of the timeframe
+        :param end: end of the timeframe
+        :param print_debug: Print the result for debugging purposes
+        :return: The number of data points in the database for a specific time period
+        """
+        print(f"Getting data between {start} and {end}...")
+        query = """
+                SELECT COUNT(*) FROM data WHERE time >= %s AND time <= %s
+                """
+        values = (start, end)
+        self.cursor.execute(query, values)
+        count = self.cursor.fetchone()[0]
+        if print_debug: print(count)
+        return int(count)
+
+    def get_coords_count(self, print_debug: bool = False) -> int:
+        """Counts the number of data points in the database
+
+        :return: The number of data points in the database
+        """
+        print(f"Getting coord count...")
+        query = """
+                SELECT COUNT(*) FROM coords
+                """
+        self.cursor.execute(query)
+        count = self.cursor.fetchone()[0]
+        if print_debug: print(count)
+        return int(count)
+
     def close(self) -> None:
         """Closes the connection to the database"""
         self.mydb.close()
